@@ -27,8 +27,8 @@
     * o Check that, when adding, fields with preset value lists contain one of the preset
     *   values.
     */
-    require_once('Pager/Sliding.php');
-    require_once('Net/URL.php');
+    require_once 'Sliding.php';
+    require_once 'Net/URL2.php';
 
     class TableEditor
     {
@@ -153,7 +153,7 @@
             }
 
             // Check the db resource
-            if (!is_resource($db)) {
+            if (!$db->ping()) {
                 die("First argument is not a valid database connection!");
             }
 
@@ -189,6 +189,7 @@
             $this->config['menu']             =null; 
 
             $this->getStructure($table);
+            
         }
 
 
@@ -955,8 +956,8 @@
                     $result = $this->deleteRow($_GET['delete']);
 
                     if ($result) {
-                        $url = new TableEditor_URL();
-                        $url->removeQueryString('delete');
+                        $url = new TableEditor_URL($_SERVER['REQUEST_URI']);
+                        $url->unsetQueryVariable('delete');
 
                         header('Location: ' . $url->getURL());
                         exit;
@@ -981,13 +982,13 @@
                 $searchClause = $this->handleAdvancedSearch();
 
                 // Get URL for clear link
-                $url = new TableEditor_URL();
+                $url = new TableEditor_URL($_SERVER['REQUEST_URI']);
                 $url->addRawQueryString('');
                 $clearURL = $url->getURL(true);
 
                 // Get URL for modify link
-                $url = new TableEditor_URL();
-                $url->addQueryString('asearch', '1');
+                $url = new TableEditor_URL($_SERVER['REQUEST_URI']);
+                $url->setQueryVariable('asearch', '1');
                 $modifyURL = $url->getURL(true);
             }
 
@@ -1050,8 +1051,8 @@
                 }
 
                 // Get URL for clear link
-                $url = new TableEditor_URL();
-                $url->removeQueryString('search');
+                $url = new TableEditor_URL($_SERVER['REQUEST_URI']);
+                $url->unsetQueryVariable('search');
                 $clearURL = $url->getURL(true);
 
             } else if (empty($searchClause)) {
@@ -1065,12 +1066,14 @@
             if (!empty($_GET['orderby']) AND preg_match('#^([a-z0-9_]+)(:desc)?$#i', $_GET['orderby'], $matches)) {
                 $this->orderby = array('field' => $matches[1], 'direction' => (int)empty($matches[2]));
             }
-
             $orderbyClause = "ORDER BY {$this->orderby['field']}" . (!$this->orderby['direction'] ? ' DESC' : '');
-
+            
             // Handle multiple instances of "orderby" on the query string; messy.
             if (count(explode('orderby', $_SERVER['QUERY_STRING'])) > 2) {
-                $url = new TableEditor_URL();
+            	$parts = explode('&',$_SERVER['QUERY_STRING']);
+                $url = new TableEditor_URL($_SERVER['REQUEST_URI']);
+                $url->unsetQueryVariable(orderby); 
+                $url->setQuery($parts[1]);
                 header('Location: ' . $url->getURL());
                 exit;
             }
@@ -1103,8 +1106,8 @@
             */
             $pager = new Pager_Sliding(array('totalItems' => $total,
                                              'delta'   => 5,
-                                             'prevImg' => '<span class="nextBackLink">3</span>',
-                                             'nextImg' => '<span class="nextBackLink">4</span>',
+                                             'prevImg' => '<span class="nextBackLink">&lArr;</span>',
+                                             'nextImg' => '<span class="nextBackLink">&rArr;</span>',
                                              'spacesBeforeSeparator' => '1',
                                              'spacesAfterSeparator' => '1',
                                              'curPageLinkClassName' => 'avgbold',
@@ -1123,6 +1126,7 @@
             if (!empty($_GET['csvdownload']) AND $_GET['type'] == 'table') {
                 $startOffset = 0;
                 $perPage     = $total;
+                
             }
 
 
@@ -1173,9 +1177,11 @@
 
             
             // Advanced Search
-            $url = new TableEditor_URL();
-            $url->addRawQueryString('asearch=1');
+            $url = new TableEditor_URL($_SERVER['REQUEST_URI']);
+            
+            $url->setQuery('asearch=1');
             $aSearchURL = $url->getURL();
+        
 
 
             /**
@@ -1332,11 +1338,11 @@
 
 
                 default:
-                    $url = new TableEditor_URL();
-                    $url->removeQueryString('csvdownload');
-                    $url->removeQueryString('type');
-                    $url->removeQueryString('headers');
-                    $url->removeQueryString('rows');
+                    $url = new TableEditor_URL($_SERVER['REQUEST_URI']);
+                    $url->unsetQueryVariable('csvdownload');
+                    $url->unsetQueryVariable('type');
+                    $url->unsetQueryVariable('headers');
+                    $url->unsetQueryVariable('rows');
                     header('Location: ' . $url->getURL());
                     exit;
             }
@@ -1397,8 +1403,8 @@
         */
         function displayAdvancedSearchPage()
         {
-            $url = new TableEditor_URL();
-            $url->addQueryString('asearch', '2');
+            $url = new TableEditor_URL($_SERVER['REQUEST_URI']);
+            $url->setQueryVariable('asearch', '2');
             $searchURL = $url->getURL(true);
             
             $url->addRawQueryString('');
@@ -1408,7 +1414,7 @@
 
             // No searching permitted
             if (empty($searchFields)) {
-                $url->removeQueryString('asearch');
+                $url->unsetQueryVariable('asearch');
                 header('Location: ' . $url->getURL());
                 exit;
             }
@@ -1695,16 +1701,16 @@
             /**
             * OK and Edit button URLs
             */
-            $url = new TableEditor_URL();
-            $url->removeQueryString('view');
+            $url = new TableEditor_URL($_SERVER['REQUEST_URI']);
+            $url->unsetQueryVariable('view');
 
             $okURL = $url->getURL(true);
 
-            $url->addQueryString('edit', $id);
+            $url->setQueryVariable('edit', $id);
             $editURL = $url->getURL(true);
 
             $this->displayHeader();
-          #### <?=nl2br(htmlspecialchars($value))#####
+            #### <?=nl2br(htmlspecialchars($value))#####
 ?>
 <table>
     <?foreach($row as $field => $value):?>
@@ -1755,11 +1761,10 @@
                          echo'<script type="text/javascript">window.close();</script>'; 
                          exit;
                     }     
-                    $url = new TableEditor_URL();
-                    $url->removeQueryString('edit');
-                    $url->removeQueryString('add');
-                    $url->removeQueryString('copy');
-
+                    $url = new TableEditor_URL($_SERVER['REQUEST_URI']);
+                    $url->unsetQueryVariable('edit');
+                    $url->unsetQueryVariable('add');
+                    $url->unsetQueryVariable('copy');
                     header('Location: ' . $url->getURL());
                     exit;
                 }
@@ -1856,17 +1861,19 @@
                     /**
                     * Add the input to the collected data arrays
                     */
-                    $unQuoted[$field] = $_POST[$field];
-                    $quoted[$field]   = $this->dbQuote($_POST[$field]);
+                    if (!($_POST[$field]=='')){
+						$unQuoted[$field] = $_POST[$field];
+						$quoted[$field]   = $this->dbQuote($_POST[$field]);
 
 
-                    /**
-                    * Add to list of fields
-                    */
-                    $fields[] = $field;
+						/**
+						* Add to list of fields
+						*/
+						$fields[] = $field;
+                    }
                 }
 
-
+                
                 /**
                 * If there are any errors, show the page again
                 */
@@ -1957,21 +1964,21 @@
                 */
                 if (empty($this->errors)) {
                     if ($_POST['action'] == 'OK') {
-                        $url = new TableEditor_URL();
-                        $url->removeQueryString('edit');
-                        $url->removeQueryString('add');
-                        $url->removeQueryString('copy');
+                        $url = new TableEditor_URL($_SERVER['REQUEST_URI']);
+                        $url->unsetQueryVariable('edit');
+                        $url->unsetQueryVariable('add');
+                        $url->unsetQueryVariable('copy');
                         header('Location: ' . $url->getURL());
                         exit;
 
                     } else if ($_POST['action'] == 'Apply') {
-                        $url = new TableEditor_URL();
+                        $url = new TableEditor_URL($_SERVER['REQUEST_URI']);
 
                         // Change to edit if this was an addition
                         if (!empty($_GET['add']) OR isset($_GET['copy'])) {
-                            $url->removeQueryString('add');
-                            $url->removeQueryString('copy');
-                            $url->addQueryString('edit', $id);
+                            $url->unsetQueryVariable('add');
+                            $url->unsetQueryVariable('copy');
+                            $url->setQueryVariable('edit', $id);
                         }
                         header('Location: ' . $url->getURL());
                         exit;
@@ -2057,7 +2064,7 @@
                 }
             }
 
-            $url = new TableEditor_URL();
+            $url = new TableEditor_URL($_SERVER['REQUEST_URI']);
             $actionURL = $url->getURL(true);
 
             $this->displayHeader();
@@ -2065,7 +2072,6 @@
 <h2><?=$title?> Details</h2>
 
 <form action="<?=$actionURL?>" method="post">
-
 <table border="0" >
     <?if($row):?>
         <?foreach($row as $field => $value):?>
@@ -2649,6 +2655,7 @@
         function orderBy(field)
         {
             location.href = location.href + (location.search.length ? '&' : '?') + 'orderby=' + encodeURIComponent(field);
+            
         }
 
 
@@ -2880,7 +2887,8 @@
         */
         function dbQuery($sql)
         {
-            if (is_resource($this->db)) {
+        	
+            if (mysqli_ping($this->db)) {
                 return mysqli_query($this->db,$sql);
             }
 
@@ -2896,9 +2904,9 @@
         function dbGetAll($sql)
         {
             $results = array();
-
             if ($res = $this->dbQuery($sql)) {
-                while ($row = mysqli_fetch_array($res, MYSQLI_ASSOC)) {
+                
+                while ($row = mysqli_fetch_assoc($res)) {
                     $results[] = $row;
                 }
 
@@ -3009,7 +3017,7 @@
     * due to MSIE replacing &copy= in urls with the copyright symbol, despite the lack
     * of ending semi-colon... :-/
     */
-    class TableEditor_URL extends Net_URL
+    class TableEditor_URL extends Net_URL2
     {
         /**
         * Returns full url
@@ -3018,9 +3026,9 @@
         * @return string                    Full url
         * @access public
         */
-        function getURL($convertAmpersands = false)
+        function get_URL($convertAmpersands = false)
         {
-            $querystring = $this->getQueryString();
+            $querystring = $this->getQuery();
 
             if ($convertAmpersands) {
                 $querystring = str_replace('&', '&amp;', $querystring); // This is the key difference to TableEditor_URL
@@ -3029,7 +3037,7 @@
             $this->url = $this->protocol . '://'
                        . $this->user . (!empty($this->pass) ? ':' : '')
                        . $this->pass . (!empty($this->user) ? '@' : '')
-                       . $this->host . ($this->port == $this->getStandardPort($this->protocol) ? '' : ':' . $this->port)
+                       . $this->host . ($this->port == $this->getPort($this->protocol) ? '' : ':' . $this->port)
                        . $this->path
                        . (!empty($querystring) ? '?' . $querystring : '')
                        . (!empty($this->anchor) ? '#' . $this->anchor : '');
