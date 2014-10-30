@@ -8,7 +8,8 @@
     * |                  http://www.phpguru.org/static/license.html                  |
     * o------------------------------------------------------------------------------o
     *
-    * Crane Johnson 2014
+    * Crane Johnson 2014 -git test
+
     * ? Copyright 2008 Richard Heyes
     */
 
