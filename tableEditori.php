@@ -8,6 +8,7 @@
     * |                  http://www.phpguru.org/static/license.html                  |
     * o------------------------------------------------------------------------------o
     *
+    * Crane Johnson 2014
     * ? Copyright 2008 Richard Heyes
     */
 
