@@ -1,6 +1,5 @@
 <?php
-    /**  this is  a test
-
+    /** 
     * o------------------------------------------------------------------------------o
     * | This package is licensed under the Phpguru license 2008. A quick summary is  |
     * | that the code is free to use for non-commercial purposes. For commercial     |
@@ -9,8 +8,7 @@
     * |                  http://www.phpguru.org/static/license.html                  |
     * o------------------------------------------------------------------------------o
     *
-    * Crane Johnson 2014 -git test
-
+    * 
     * ? Copyright 2008 Richard Heyes
     */
 
