@@ -1,5 +1,5 @@
 <?php
-    /**  Test
+    /**  Test test test
     * o------------------------------------------------------------------------------o
     * | This package is licensed under the Phpguru license 2008. A quick summary is  |
     * | that the code is free to use for non-commercial purposes. For commercial     |
