@@ -31,6 +31,35 @@
     require_once 'Sliding.php';
     require_once 'Net/URL2.php';
 
+    
+     /**
+    * Shortens the given string to the specified number of characters, however
+    * will never shorten mid-word (going backwards to find white space). Appends
+    * "..." (unless third arg is given).
+    * 
+    * @param  string $str    Input to shorten
+    * @param  int    $length Length to shorten to (defaults to 35)
+    * @param  string $append String to append (defaults to "...")
+    * @return string         Resulting shortened string
+    */
+    
+    function str_curtail($str, $length = 35, $append = '...')
+        {
+            // String short enough already ?
+            if (strlen($str) <= $length) {
+                return $str;
+            }
+    
+            $str = substr($str, 0, $length);
+            
+            for ($i=$length - 1; !ctype_space($str{$i}); --$i); // No body intentionally
+            
+            $str = rtrim(substr($str, 0, $i));
+            
+            return $str . $append;
+    }
+    
+    
     class TableEditor
     {
         /**
